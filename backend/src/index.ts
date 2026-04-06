@@ -1,11 +1,11 @@
 import cors from "cors";
 import express from "express";
-import type { ErrorRequestHandler } from "express";
-
 import { PORT } from "./config.js";
 import { connectMongo } from "./db.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 import "./models/Case.js";
 import "./models/Task.js";
+import { casesRouter } from "./routes/cases.js";
 
 const app = express();
 
@@ -16,10 +16,7 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  console.error(err);
-  res.status(500).json({ message: "Internal Server Error" });
-};
+app.use("/cases", casesRouter);
 
 app.use(errorHandler);
 

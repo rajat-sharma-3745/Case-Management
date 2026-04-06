@@ -3,6 +3,7 @@ import express from "express";
 import type { ErrorRequestHandler } from "express";
 
 import { PORT } from "./config.js";
+import { connectMongo } from "./db.js";
 
 const app = express();
 
@@ -20,6 +21,14 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+async function start(): Promise<void> {
+  await connectMongo();
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+}
+
+start().catch((err: unknown) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });

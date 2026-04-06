@@ -8,7 +8,12 @@ import {
   listCasesSortedByNextHearing,
   updateCase,
 } from "../services/caseService.js";
+import {
+  createTaskForCase,
+  listTasksForCase,
+} from "../services/taskService.js";
 import { parseCaseCreate, parseCaseUpdate } from "../validation/caseSchemas.js";
+import { parseTaskCreate } from "../validation/taskSchemas.js";
 import { assertValidObjectId } from "../validation/objectId.js";
 
 export const casesRouter = Router();
@@ -21,6 +26,27 @@ casesRouter.post("/", async (req, res) => {
 
 casesRouter.get("/", async (_req, res) => {
   const list = await listCasesSortedByNextHearing();
+  res.json(list);
+});
+
+casesRouter.post("/:id/tasks", async (req, res) => {
+  assertValidObjectId(req.params.id);
+  const parent = await getCaseById(req.params.id);
+  if (parent === null) {
+    throw new HttpError(404, "Case not found");
+  }
+  const data = parseTaskCreate(req.body);
+  const doc = await createTaskForCase(req.params.id, data);
+  res.status(201).json(doc.toJSON());
+});
+
+casesRouter.get("/:id/tasks", async (req, res) => {
+  assertValidObjectId(req.params.id);
+  const parent = await getCaseById(req.params.id);
+  if (parent === null) {
+    throw new HttpError(404, "Case not found");
+  }
+  const list = await listTasksForCase(req.params.id);
   res.json(list);
 });
 

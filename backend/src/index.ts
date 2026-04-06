@@ -6,6 +6,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import "./models/Case.js";
 import "./models/Task.js";
 import { casesRouter } from "./routes/cases.js";
+import { dashboardRouter } from "./routes/dashboard.js";
 import { tasksRouter } from "./routes/tasks.js";
 
 const app = express();
@@ -18,6 +19,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/cases", casesRouter);
+app.use("/dashboard", dashboardRouter);
 app.use("/tasks", tasksRouter);
 
 app.use(errorHandler);

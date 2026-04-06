@@ -4,6 +4,8 @@ import type { ErrorRequestHandler } from "express";
 
 import { PORT } from "./config.js";
 import { connectMongo } from "./db.js";
+import "./models/Case.js";
+import "./models/Task.js";
 
 const app = express();
 

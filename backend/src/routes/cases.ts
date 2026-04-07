@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import { authenticate, requireAdmin } from "../auth/middleware.js";
 import { HttpError } from "../http/errors.js";
 import {
   createCase,
@@ -74,9 +75,13 @@ casesRouter.put("/:id", async (req, res) => {
   res.json(updated.toJSON());
 });
 
-casesRouter.delete("/:id", async (req, res) => {
-  assertValidObjectId(req.params.id);
-  const deleted = await deleteCaseWithTaskCascade(req.params.id);
+casesRouter.delete("/:id", authenticate, requireAdmin, async (req, res) => {
+  const caseId = req.params.id;
+  if (typeof caseId !== "string") {
+    throw new HttpError(400, "Invalid id");
+  }
+  assertValidObjectId(caseId);
+  const deleted = await deleteCaseWithTaskCascade(caseId);
   if (!deleted) {
     throw new HttpError(404, "Case not found");
   }

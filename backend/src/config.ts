@@ -4,6 +4,7 @@ import { z } from "zod";
 dotenv.config();
 
 const envSchema = z.object({
+  JWT_SECRET: z.string().min(1, "JWT_SECRET is required for signing and verifying tokens"),
   PORT: z
     .string()
     .optional()
@@ -23,6 +24,7 @@ const envSchema = z.object({
 });
 
 const parsed = envSchema.safeParse({
+  JWT_SECRET: process.env.JWT_SECRET,
   PORT: process.env.PORT,
   MONGODB_URI: process.env.MONGODB_URI,
 });
@@ -32,5 +34,6 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+export const JWT_SECRET = parsed.data.JWT_SECRET;
 export const PORT = parsed.data.PORT;
 export const MONGODB_URI = parsed.data.MONGODB_URI;

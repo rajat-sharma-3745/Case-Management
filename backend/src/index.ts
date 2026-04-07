@@ -5,6 +5,7 @@ import { connectMongo } from "./db.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import "./models/Case.js";
 import "./models/Task.js";
+import { authRouter } from "./routes/auth.js";
 import { casesRouter } from "./routes/cases.js";
 import { dashboardRouter } from "./routes/dashboard.js";
 import { tasksRouter } from "./routes/tasks.js";
@@ -17,6 +18,10 @@ app.use(express.json());
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+if (process.env.NODE_ENV !== "production") {
+  app.use("/auth", authRouter);
+}
 
 app.use("/cases", casesRouter);
 app.use("/dashboard", dashboardRouter);

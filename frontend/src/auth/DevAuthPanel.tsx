@@ -4,7 +4,7 @@ import { ApiError, apiJson } from "../api/client";
 import { InlineError } from "../components/InlineError";
 import { LoadingState } from "../components/LoadingState";
 import { SectionCard } from "../components/SectionCard";
-import { useToast } from "../components/ToastProvider";
+import { useToast } from "../components/toastContext";
 import { useAuth } from "./useAuth";
 import type { Role } from "./roles";
 
@@ -76,24 +76,26 @@ export function DevAuthPanel() {
             <label htmlFor="mint-role" className="block text-sm font-medium text-slate-700">
               Role for new token
             </label>
-            <select
-              id="mint-role"
-              value={mintRole}
-              onChange={(e) => setMintRole(e.target.value as Role)}
-              className="mt-1 w-full max-w-xs rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
-            >
-              <option value="intern">intern</option>
-              <option value="admin">admin</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => void handleMint()}
-              disabled={loading}
-              aria-busy={loading}
-              className="mt-3 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-            >
-              {loading ? "Requesting…" : "Get token from API"}
-            </button>
+            <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <select
+                id="mint-role"
+                value={mintRole}
+                onChange={(e) => setMintRole(e.target.value as Role)}
+                className="w-full max-w-xs rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+              >
+                <option value="intern">intern</option>
+                <option value="admin">admin</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => void handleMint()}
+                disabled={loading}
+                aria-busy={loading}
+                className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+              >
+                {loading ? "Requesting…" : "Get token from API"}
+              </button>
+            </div>
             {loading ? <LoadingState message="Request in progress..." size="sm" className="mt-2" /> : null}
           </div>
 
@@ -101,21 +103,23 @@ export function DevAuthPanel() {
             <label htmlFor="paste-token" className="block text-sm font-medium text-slate-700">
               Or paste token
             </label>
-            <textarea
-              id="paste-token"
-              rows={3}
-              value={pasteValue}
-              onChange={(e) => setPasteValue(e.target.value)}
-              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-              className="mt-1 w-full max-w-lg rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
-            />
-            <button
-              type="button"
-              onClick={handlePasteApply}
-              className="mt-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
-            >
-              Use pasted token
-            </button>
+            <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <textarea
+                id="paste-token"
+                rows={3}
+                value={pasteValue}
+                onChange={(e) => setPasteValue(e.target.value)}
+                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                className="w-full max-w-lg rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+              />
+              <button
+                type="button"
+                onClick={handlePasteApply}
+                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+              >
+                Use pasted token
+              </button>
+            </div>
           </div>
         </div>
       )}

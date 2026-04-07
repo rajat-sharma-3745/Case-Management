@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ApiError, apiJson } from "../api/client";
+import { CasesWorkspace } from "../components/CasesWorkspace";
 import { InlineError } from "../components/InlineError";
 import { LoadingState } from "../components/LoadingState";
 import { PageHeader } from "../components/PageHeader";
@@ -18,6 +19,7 @@ const EMPTY_SUMMARY: DashboardSummaryDto = {
 
 export function DashboardPage() {
   const { refreshToken } = useDashboardRefresh();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [summary, setSummary] = useState<DashboardSummaryDto>(EMPTY_SUMMARY);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,19 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" subtitle="Key metrics for current case and task activity." />
+      <PageHeader
+        title="Dashboard"
+        subtitle="Key metrics for current case and task activity."
+        actions={
+          <button
+            type="button"
+            onClick={() => setCreateModalOpen(true)}
+            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          >
+            Create case
+          </button>
+        }
+      />
       {loading ? (
         <div className="space-y-4" aria-busy="true">
           <LoadingState message="Loading summary..." size="sm" />
@@ -59,6 +73,11 @@ export function DashboardPage() {
           <MetricCard label="Completed tasks" value={summary.tasksCompleted} />
         </div>
       ) : null}
+      <CasesWorkspace
+        createInModal
+        createModalOpen={createModalOpen}
+        onCloseCreateModal={() => setCreateModalOpen(false)}
+      />
     </div>
   );
 }

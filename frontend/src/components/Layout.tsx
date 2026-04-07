@@ -12,8 +12,8 @@ export function Layout() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-lg font-semibold text-slate-900">Case Management</span>
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <span className="text-lg font-semibold tracking-tight text-slate-900">Case Management</span>
           <nav className="flex flex-wrap gap-2">
             <NavLink to="/" className={linkClass} end>
               Home
@@ -27,7 +27,7 @@ export function Layout() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <Outlet />
       </main>
     </div>

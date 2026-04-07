@@ -1,11 +1,16 @@
 import { useState } from "react";
 
 import { ApiError, apiJson } from "../api/client";
+import { InlineError } from "../components/InlineError";
+import { LoadingState } from "../components/LoadingState";
+import { SectionCard } from "../components/SectionCard";
+import { useToast } from "../components/ToastProvider";
 import { useAuth } from "./useAuth";
 import type { Role } from "./roles";
 
 export function DevAuthPanel() {
   const { token, role, setToken, logout } = useAuth();
+  const { pushToast } = useToast();
   const [mintRole, setMintRole] = useState<Role>("intern");
   const [pasteValue, setPasteValue] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,9 +27,11 @@ export function DevAuthPanel() {
       });
       setToken(data.token, { role: data.role });
       setPasteValue("");
+      pushToast({ message: `Signed in as ${data.role}.`, tone: "success" });
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Request failed";
       setError(msg);
+      pushToast({ message: msg, tone: "error" });
     } finally {
       setLoading(false);
     }
@@ -38,10 +45,11 @@ export function DevAuthPanel() {
       return;
     }
     setToken(trimmed);
+    pushToast({ message: "Token applied.", tone: "success" });
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <SectionCard className="p-6">
       <h2 className="text-lg font-semibold text-slate-900">Dev sign-in</h2>
       <p className="mt-1 text-sm text-slate-600">
         Uses <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">POST /auth/dev-token</code>{" "}
@@ -81,10 +89,12 @@ export function DevAuthPanel() {
               type="button"
               onClick={() => void handleMint()}
               disabled={loading}
+              aria-busy={loading}
               className="mt-3 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
             >
               {loading ? "Requesting…" : "Get token from API"}
             </button>
+            {loading ? <LoadingState message="Request in progress..." size="sm" className="mt-2" /> : null}
           </div>
 
           <div>
@@ -110,11 +120,7 @@ export function DevAuthPanel() {
         </div>
       )}
 
-      {error ? (
-        <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </section>
+      {error ? <InlineError message={error} className="mt-4" /> : null}
+    </SectionCard>
   );
 }

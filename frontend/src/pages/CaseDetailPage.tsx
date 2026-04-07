@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { ApiError, apiJson } from "../api/client";
 import { useAuth } from "../auth/useAuth";
+import { Modal } from "../components/Modal";
 import { useDashboardRefresh } from "../dashboard/useDashboardRefresh";
 import {
   CASE_STAGES,
@@ -40,12 +41,27 @@ const INITIAL_TASK_FORM: TaskForm = {
   status: "Pending",
 };
 
+type PendingDelete = { kind: "case" } | { kind: "task"; taskId: string };
+
 function toDateInputValue(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return "";
   }
   return date.toISOString().slice(0, 10);
+}
+
+function toLocalDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isPastDateInput(value: string): boolean {
+  if (!value) return false;
+  const today = toLocalDateInputValue(new Date());
+  return value < today;
 }
 
 function toCaseForm(data: CaseDto): CaseForm {
@@ -76,6 +92,7 @@ export function CaseDetailPage() {
   const [caseMessage, setCaseMessage] = useState<string | null>(null);
   const [taskMessage, setTaskMessage] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
   const isIntern = role === "intern";
   const canDelete = role === "admin";
@@ -166,8 +183,6 @@ export function CaseDetailPage() {
 
   async function handleDeleteCase() {
     if (!id) return;
-    const confirmed = window.confirm("Delete this case and all linked tasks?");
-    if (!confirmed) return;
     setWorking(true);
     setCaseMessage(null);
     try {
@@ -268,8 +283,6 @@ export function CaseDetailPage() {
   }
 
   async function handleDeleteTask(taskId: string) {
-    const confirmed = window.confirm("Delete this task?");
-    if (!confirmed) return;
     setWorking(true);
     setTaskMessage(null);
     try {
@@ -282,6 +295,16 @@ export function CaseDetailPage() {
     } finally {
       setWorking(false);
     }
+  }
+
+  async function handleConfirmDelete() {
+    if (!pendingDelete) return;
+    setPendingDelete(null);
+    if (pendingDelete.kind === "case") {
+      await handleDeleteCase();
+      return;
+    }
+    await handleDeleteTask(pendingDelete.taskId);
   }
 
   if (loading) {
@@ -377,15 +400,15 @@ export function CaseDetailPage() {
               disabled={working}
               className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
-              Save changes
+              {working ? "Save changes..." : "Save changes"}
             </button>
             <button
               type="button"
               disabled={!canDelete || working}
-              onClick={() => void handleDeleteCase()}
+              onClick={() => setPendingDelete({ kind: "case" })}
               className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Delete case
+              {working ? "Delete case..." : "Delete case"}
             </button>
           </div>
         </form>
@@ -419,6 +442,9 @@ export function CaseDetailPage() {
               onChange={(e) => setTaskFormField("new", "dueDate", e.target.value)}
               className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
             />
+            {isPastDateInput(newTask.dueDate) ? (
+              <p className="mt-1 text-xs text-amber-700">Due date is in the past. This task will be marked overdue.</p>
+            ) : null}
           </label>
           <label className="text-sm text-slate-700">
             Priority
@@ -440,7 +466,7 @@ export function CaseDetailPage() {
               disabled={working}
               className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900"
             >
-              Add task
+              {working ? "Add task..." : "Add task"}
             </button>
           </div>
         </form>
@@ -460,21 +486,35 @@ export function CaseDetailPage() {
               status: task.status,
             };
             const isCompleted = task.status === "Completed";
+            const isOverdue = task.status === "Pending" && isPastDateInput(toDateInputValue(task.dueDate));
             return (
               <article
                 key={task._id}
-                className={`rounded-md border px-4 py-4 ${isCompleted ? "border-emerald-200 bg-emerald-50/40" : "border-slate-200 bg-white"}`}
+                className={`rounded-md border px-4 py-4 ${
+                  isCompleted
+                    ? "border-emerald-200 bg-emerald-50/40"
+                    : isOverdue
+                      ? "border-red-200 bg-red-50/40"
+                      : "border-slate-200 bg-white"
+                }`}
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className={`font-medium ${isCompleted ? "text-emerald-800 line-through" : "text-slate-900"}`}>
+                  <h3
+                    className={`font-medium ${
+                      isCompleted ? "text-emerald-800 line-through" : isOverdue ? "text-red-800" : "text-slate-900"
+                    }`}
+                  >
                     {task.title}
                   </h3>
+                  {isOverdue ? (
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Overdue</span>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => void handleToggleStatus(task)}
                     className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
                   >
-                    Mark as {isCompleted ? "Pending" : "Completed"}
+                    {working ? `Mark as ${isCompleted ? "Pending" : "Completed"}...` : `Mark as ${isCompleted ? "Pending" : "Completed"}`}
                   </button>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
@@ -502,6 +542,11 @@ export function CaseDetailPage() {
                       onChange={(e) => setTaskFormField({ taskId: task._id }, "dueDate", e.target.value)}
                       className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
                     />
+                    {isPastDateInput(edit.dueDate) ? (
+                      <p className="mt-1 text-xs text-amber-700">
+                        Due date is in the past. Task will appear as overdue while pending.
+                      </p>
+                    ) : null}
                   </label>
                   <label className="text-xs text-slate-600">
                     Priority
@@ -526,14 +571,14 @@ export function CaseDetailPage() {
                     onClick={() => void handleUpdateTask(task)}
                     className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800"
                   >
-                    Save task
+                    {working ? "Save task..." : "Save task"}
                   </button>
                   <button
                     type="button"
-                    onClick={() => void handleDeleteTask(task._id)}
+                    onClick={() => setPendingDelete({ kind: "task", taskId: task._id })}
                     className="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700"
                   >
-                    Delete task
+                    {working ? "Delete task..." : "Delete task"}
                   </button>
                 </div>
               </article>
@@ -542,6 +587,41 @@ export function CaseDetailPage() {
         </div>
         {taskMessage ? <p className="mt-4 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700">{taskMessage}</p> : null}
       </section>
+      <Modal
+        open={pendingDelete !== null}
+        onClose={() => setPendingDelete(null)}
+        title={pendingDelete?.kind === "case" ? "Delete case" : "Delete task"}
+        size="md"
+      >
+        <p className="text-sm text-slate-700">
+          {pendingDelete?.kind === "case"
+            ? "Delete this case and all linked tasks? This action cannot be undone."
+            : "Delete this task? This action cannot be undone."}
+        </p>
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setPendingDelete(null)}
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleConfirmDelete()}
+            disabled={working}
+            className="rounded-md bg-red-700 px-3 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-50"
+          >
+            {working
+              ? pendingDelete?.kind === "case"
+                ? "Delete case..."
+                : "Delete task..."
+              : pendingDelete?.kind === "case"
+                ? "Delete case"
+                : "Delete task"}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

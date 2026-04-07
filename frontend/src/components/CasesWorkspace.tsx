@@ -239,7 +239,7 @@ export function CasesWorkspace({
             disabled={submitting}
             className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
           >
-            {submitting ? "Creating..." : "Create case"}
+            {submitting ? "Create case..." : "Create case"}
           </button>
           {submitError ? <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{submitError}</p> : null}
         </div>

@@ -5,9 +5,15 @@ type ModalProps = {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
+  size?: "md" | "xl";
 };
 
-export function Modal({ title, open, onClose, children }: ModalProps) {
+const SIZE_CLASS: Record<NonNullable<ModalProps["size"]>, string> = {
+  md: "max-w-md",
+  xl: "max-w-3xl",
+};
+
+export function Modal({ title, open, onClose, children, size = "xl" }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     function onKeyDown(event: KeyboardEvent) {
@@ -32,7 +38,7 @@ export function Modal({ title, open, onClose, children }: ModalProps) {
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-5 shadow-xl sm:p-6"
+        className={`max-h-[90vh] w-full overflow-y-auto rounded-lg bg-white p-5 shadow-xl sm:p-6 ${SIZE_CLASS[size]}`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -41,8 +47,9 @@ export function Modal({ title, open, onClose, children }: ModalProps) {
             type="button"
             onClick={onClose}
             className="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+            aria-label="Close modal"
           >
-            Close
+            &times;
           </button>
         </div>
         {children}

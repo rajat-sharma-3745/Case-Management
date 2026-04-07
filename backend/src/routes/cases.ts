@@ -5,14 +5,18 @@ import {
   createCase,
   deleteCaseWithTaskCascade,
   getCaseById,
-  listCasesSortedByNextHearing,
+  listCasesWithFilters,
   updateCase,
 } from "../services/caseService.js";
 import {
   createTaskForCase,
   listTasksForCase,
 } from "../services/taskService.js";
-import { parseCaseCreate, parseCaseUpdate } from "../validation/caseSchemas.js";
+import {
+  parseCaseCreate,
+  parseCaseListQuery,
+  parseCaseUpdate,
+} from "../validation/caseSchemas.js";
 import { parseTaskCreate } from "../validation/taskSchemas.js";
 import { assertValidObjectId } from "../validation/objectId.js";
 
@@ -24,8 +28,9 @@ casesRouter.post("/", async (req, res) => {
   res.status(201).json(doc.toJSON());
 });
 
-casesRouter.get("/", async (_req, res) => {
-  const list = await listCasesSortedByNextHearing();
+casesRouter.get("/", async (req, res) => {
+  const filters = parseCaseListQuery(req.query);
+  const list = await listCasesWithFilters(filters);
   res.json(list);
 });
 

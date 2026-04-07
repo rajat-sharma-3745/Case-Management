@@ -2,7 +2,16 @@ import mongoose from "mongoose";
 
 import { Case } from "../models/Case.js";
 import { Task } from "../models/Task.js";
-import type { CaseCreateInput, CaseUpdateInput } from "../validation/caseSchemas.js";
+import { addUtcCalendarDays, utcStartOfCalendarDay } from "../utils/dateUtils.js";
+import type {
+  CaseCreateInput,
+  CaseListFilters,
+  CaseUpdateInput,
+} from "../validation/caseSchemas.js";
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 function caseCreateDocumentPayload(data: CaseCreateInput) {
   const { notes, ...rest } = data;
@@ -13,8 +22,31 @@ export async function createCase(input: CaseCreateInput) {
   return Case.create(caseCreateDocumentPayload(input));
 }
 
-export async function listCasesSortedByNextHearing() {
-  return Case.find().sort({ nextHearingDate: 1 }).lean();
+export async function listCasesWithFilters(filters: CaseListFilters) {
+  const filter: Record<string, unknown> = {};
+
+  if (filters.q !== undefined) {
+    const pattern = new RegExp(escapeRegex(filters.q), "i");
+    filter.$or = [{ caseTitle: pattern }, { clientName: pattern }];
+  }
+
+  if (filters.stage !== undefined) {
+    filter.stage = filters.stage;
+  }
+
+  if (filters.from !== undefined || filters.to !== undefined) {
+    const range: { $gte?: Date; $lt?: Date } = {};
+    if (filters.from !== undefined) {
+      range.$gte = utcStartOfCalendarDay(filters.from);
+    }
+    if (filters.to !== undefined) {
+      const startOfToDay = utcStartOfCalendarDay(filters.to);
+      range.$lt = addUtcCalendarDays(startOfToDay, 1);
+    }
+    filter.nextHearingDate = range;
+  }
+
+  return Case.find(filter).sort({ nextHearingDate: 1 }).lean();
 }
 
 export async function getCaseById(id: string) {

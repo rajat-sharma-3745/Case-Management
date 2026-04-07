@@ -1,5 +1,4 @@
 import type { RequestHandler } from "express";
-import { JsonWebTokenError } from "jsonwebtoken";
 
 import { HttpError } from "../http/errors.js";
 import { verifyRoleToken } from "./jwt.js";
@@ -22,11 +21,7 @@ export const authenticate: RequestHandler = (req, _res, next) => {
     const { role } = verifyRoleToken(token);
     req.user = { role };
     next();
-  } catch (err) {
-    if (err instanceof JsonWebTokenError) {
-      next(new HttpError(401, "Invalid or expired token"));
-      return;
-    }
+  } catch {
     next(new HttpError(401, "Invalid or expired token"));
   }
 };
